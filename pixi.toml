@@ -12,14 +12,10 @@ platforms = ["linux-64", "osx-64", "osx-arm64"]
 # are recognized as global).
 postinstall = "pip install --no-build-isolation --no-deps --disable-pip-version-check --break-system-packages -e ."
 build = "echo test"
+mine-conference-data = "python src/easy-chair/main.py"
 
 [dependencies]
 python = ">=3.8"
-numpy = "==1.26.4"
-gym = ">=0.26.1,<0.27"
-gym-box2d = ">=0.26.1,<0.27"
-matplotlib = ">=3.8.4,<3.9"
-tqdm = ">=4.66.2,<4.67"
 
 [feature.test]
 tasks = { test = "pytest" }
@@ -74,3 +70,9 @@ dev-ju = ["test", "lint", "jupyter", "pre-commit"]
 dev-ju-nvim = ["test", "lint", "jupyter", "jupyter-neovim", "pre-commit"]
 quarto = ["quarto", "jupyter"]
 dev-quarto = ["test", "lint", "quarto", "jupyter", "pre-commit"]
+
+[pypi-dependencies]
+tqdm = ">=4.66.2,<4.67"
+requests = ">=2.32.3,<3"
+typing-extensions = ">=4.13.2,<5"
+beautifulsoup4 = ">=4.13.4, <5"
