@@ -2,6 +2,8 @@ import csv
 import hashlib
 from dataclasses import dataclass
 from pathlib import Path
+from re import findall
+from typing import Any
 from urllib.parse import urljoin, urlparse
 
 import requests
@@ -15,9 +17,13 @@ baseurl = "https://easychair.org"
 conferences_by_area_baseurl = urljoin(baseurl, "/cfp/")
 
 
+def get_hash_from_url(url: str):
+    return hashlib.md5(url.encode("utf-8")).hexdigest()
+
+
 def get_filename_from_url(url: str):
+    url_hash = get_hash_from_url(url)
     """Generate a safe filename from URL using hash"""
-    url_hash = hashlib.md5(url.encode("utf-8")).hexdigest()
     parsed_url = urlparse(url)
     domain = parsed_url.netloc.replace("www.", "").split(".")[0]
     return f"{domain}_{url_hash}.html"
@@ -53,11 +59,22 @@ def fetch_html(url: str, cache_dir=raw_data_path):
 class ResearchArea:
     name: str
     url_slug: str
+    _index: int = 0
     _url: str = ""
+    _fullname: str = ""
 
     @property
     def url(self) -> str:
         return urljoin(conferences_by_area_baseurl, self.url_slug)
+
+    @property
+    def index(self) -> str:
+        temp = findall(r"\d+", self.url_slug)
+        return int(temp[0])
+
+    @property
+    def fullname(self) -> str:
+        return f"{self.index}%{self.name}%{get_hash_from_url(self.url)}"
 
 
 def get_info(td):
@@ -74,24 +91,66 @@ def get_research_areas(table: NavigableString | Tag):
     return (area for area in research_areas if area)
 
 
-def html_table_to_csv(url: str, output_file: Path):
+def format_topics(cell):
+    spans = cell.find_all("span")
+
+    return [span.get_text(strip=True) for span in spans]
+
+
+HEADERS = [
+    {"name": "Acronym", "index": 1},
+    {"name": "Name", "index": 2},
+    {"name": "Location", "index": 3},
+    {"name": "Submission deadline", "index": 4},
+    {"name": "Start date", "index": 5},
+    {"name": "Topics", "index": 6, "format": format_topics},
+]
+
+
+def get_column_data(index: int, cell) -> str:
+    format_callback = HEADERS[index].get(
+        "format", lambda cell: cell.get_text(strip=True)
+    )
+
+    return format_callback(cell)
+
+
+def get_research_area_conferences_data(
+    table: NavigableString | Tag,
+    area: ResearchArea,
+    results_dir_path: Path,
+    headers: list[dict[str, Any]],
+):
+    filename = f"{area.fullname}.csv"
+    output_file = results_dir_path / filename
+
+    # Prepare CSV writer.
+    with open(output_file, "w", newline="", encoding="utf-8") as csvfile:
+        writer = csv.writer(csvfile)
+
+        # Write headers.
+        writer.writerow([header["name"] for header in headers])
+
+        # Process rows.
+        for row in table.find_all("tr")[1:]:  # Skip header row
+            cells = row.find_all(["td", "th"])
+            if len(cells) >= len(headers):
+                # row_data = [cell.get_text(strip=True) for cell in cells[: len(headers)]]
+                row_data = [
+                    get_column_data(*cell) for cell in enumerate(cells[: len(headers)])
+                ]
+                writer.writerow(row_data)
+
+    print(f" - {filename}")
+
+
+def html_table_to_csv(url: str, results_dir_path: Path):
     html_content = fetch_html(url)
     if not html_content:
         return False
 
     # Parse the HTML
     soup = BeautifulSoup(html_content, "html.parser")
-
-    # Find the table - this assumes it's the first table with these headers
-    # You might need to adjust this selector based on the actual page structure
-    headers = [
-        "Acronym",
-        "Name",
-        "Location",
-        "Submission deadline",
-        "Start date",
-        "Topics",
-    ]
 
     # Find a table that contains all these headers
     table_headers = None
@@ -127,30 +186,16 @@ def html_table_to_csv(url: str, output_file: Path):
 
     # print(table)
 
-    table = conferences_t
+    results_dir_path.mkdir(exist_ok=True)
+    print(f"Saving tables to {results_dir_path}:")
 
-    # Prepare CSV writer
-    with open(output_file, "w", newline="", encoding="utf-8") as csvfile:
-        writer = csv.writer(csvfile)
+    get_research_area_conferences_data(
+        conferences_t, area=area, results_dir_path=results_dir_path, headers=HEADERS
+    )
 
-        # Write headers
-        writer.writerow(headers)
-
-        # Process rows
-        for row in table.find_all("tr")[1:]:  # Skip header row
-            cells = row.find_all(["td", "th"])
-            if len(cells) >= len(headers):
-                row_data = [cell.get_text(strip=True) for cell in cells[: len(headers)]]
-                writer.writerow(row_data)
-
-    print(f"Successfully saved table to {output_file}")
     return True
 
 
 if __name__ == "__main__":
-    # url = "https://easychair.org/cfp/area.cgi?area=18"
     url = urljoin(conferences_by_area_baseurl, "area.cgi")
-    print(url, conferences_by_area_baseurl)
-    processed_data_path.mkdir(exist_ok=True)
-    output_file = processed_data_path / "conference_data.csv"
-    html_table_to_csv(url, output_file)
+    html_table_to_csv(url, processed_data_path / "conferences_by_areas")
