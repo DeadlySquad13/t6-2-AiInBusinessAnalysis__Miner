@@ -15,7 +15,7 @@ baseurl = "https://easychair.org"
 conferences_by_area_baseurl = urljoin(baseurl, "/cfp/")
 
 
-def get_filename_from_url(url):
+def get_filename_from_url(url: str):
     """Generate a safe filename from URL using hash"""
     url_hash = hashlib.md5(url.encode("utf-8")).hexdigest()
     parsed_url = urlparse(url)
@@ -23,7 +23,7 @@ def get_filename_from_url(url):
     return f"{domain}_{url_hash}.html"
 
 
-def fetch_html(url, cache_dir=raw_data_path):
+def fetch_html(url: str, cache_dir=raw_data_path):
     """Fetch HTML content with caching"""
     raw_data_path.mkdir(exist_ok=True)
     filepath = cache_dir / get_filename_from_url(url)
@@ -74,7 +74,7 @@ def get_research_areas(table: NavigableString | Tag):
     return (area for area in research_areas if area)
 
 
-def html_table_to_csv(url, output_file):
+def html_table_to_csv(url: str, output_file: Path):
     html_content = fetch_html(url)
     if not html_content:
         return False
@@ -94,7 +94,6 @@ def html_table_to_csv(url, output_file):
     ]
 
     # Find a table that contains all these headers
-    table = None
     table_headers = None
     t = soup.find("table", id="ec:table1")
 
@@ -115,22 +114,12 @@ def html_table_to_csv(url, output_file):
     if not conferences_t:
         return False
 
-    print(conferences_t.prettify())
+    # print(conferences_t.prettify())
     # print(list(get_research_areas(t)))
 
     # table_headers = [th.get_text(strip=True) for th in tds]
 
     # print(table_headers)
-
-    # table = None
-    # for t in soup.find_all("table"):
-    #     ths = t.find_all("th")
-    #     if ths:
-    #         table_headers = [th.get_text(strip=True) for th in ths]
-    #         if all(h in " ".join(table_headers) for h in headers):
-    #             table = t
-    #             break
-
     # if not table:
     #     print("Could not find a table with the specified headers")
     #     print(soup.prettify())
@@ -138,19 +127,21 @@ def html_table_to_csv(url, output_file):
 
     # print(table)
 
+    table = conferences_t
+
     # Prepare CSV writer
-    # with open(output_file, "w", newline="", encoding="utf-8") as csvfile:
-    #     writer = csv.writer(csvfile)
+    with open(output_file, "w", newline="", encoding="utf-8") as csvfile:
+        writer = csv.writer(csvfile)
 
-    #     # Write headers
-    #     writer.writerow(headers)
+        # Write headers
+        writer.writerow(headers)
 
-    #     # Process rows
-    #     for row in table.find_all("tr")[1:]:  # Skip header row
-    #         cells = row.find_all(["td", "th"])
-    #         if len(cells) >= len(headers):
-    #             row_data = [cell.get_text(strip=True) for cell in cells[: len(headers)]]
-    #             writer.writerow(row_data)
+        # Process rows
+        for row in table.find_all("tr")[1:]:  # Skip header row
+            cells = row.find_all(["td", "th"])
+            if len(cells) >= len(headers):
+                row_data = [cell.get_text(strip=True) for cell in cells[: len(headers)]]
+                writer.writerow(row_data)
 
     print(f"Successfully saved table to {output_file}")
     return True
@@ -160,5 +151,6 @@ if __name__ == "__main__":
     # url = "https://easychair.org/cfp/area.cgi?area=18"
     url = urljoin(conferences_by_area_baseurl, "area.cgi")
     print(url, conferences_by_area_baseurl)
+    processed_data_path.mkdir(exist_ok=True)
     output_file = processed_data_path / "conference_data.csv"
     html_table_to_csv(url, output_file)
