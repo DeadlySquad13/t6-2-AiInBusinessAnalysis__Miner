@@ -1,15 +1,18 @@
 import csv
 import hashlib
-import os
+from dataclasses import dataclass
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString, Tag
 
 data_path = Path("data")
 raw_data_path = data_path / "raw"
 processed_data_path = data_path / "processed"
+
+baseurl = "https://easychair.org"
+conferences_by_area_baseurl = urljoin(baseurl, "/cfp/")
 
 
 def get_filename_from_url(url):
@@ -46,6 +49,31 @@ def fetch_html(url, cache_dir=raw_data_path):
         return None
 
 
+@dataclass
+class ResearchArea:
+    name: str
+    url_slug: str
+    _url: str = ""
+
+    @property
+    def url(self) -> str:
+        return urljoin(conferences_by_area_baseurl, self.url_slug)
+
+
+def get_info(td):
+    if td.a:
+        return ResearchArea(name=td.a.span.contents[0], url_slug=td.a["href"])
+
+
+def get_research_areas(table: NavigableString | Tag):
+    tds = table.find_all("td")
+    research_areas = (get_info(td) for td in tds)
+    if not research_areas:
+        return
+
+    return (area for area in research_areas if area)
+
+
 def html_table_to_csv(url, output_file):
     html_content = fetch_html(url)
     if not html_content:
@@ -65,24 +93,34 @@ def html_table_to_csv(url, output_file):
         "Topics",
     ]
 
-    def get_info(td):
-        if td.a:
-            return (td.a["href"], td.a.span.contents)
-
     # Find a table that contains all these headers
     table = None
     table_headers = None
     t = soup.find("table", id="ec:table1")
-    print(t.prettify())
-    tds = t.find_all("td")
-    print(tds)
-    print([get_info(td) for td in tds])
-    if not tds:
+
+    if not t:
         return False
 
-        table_headers = [th.get_text(strip=True) for th in tds]
+    research_areas = get_research_areas(t)
+    area = research_areas.__next__()
+    print(area.url)
 
-    print(table_headers)
+    area_html_content = fetch_html(area.url)
+    if not area_html_content:
+        return False
+
+    area_soup = BeautifulSoup(area_html_content, "html.parser")
+    conferences_t = area_soup.find("table", id="ec:table2")
+
+    if not conferences_t:
+        return False
+
+    print(conferences_t.prettify())
+    # print(list(get_research_areas(t)))
+
+    # table_headers = [th.get_text(strip=True) for th in tds]
+
+    # print(table_headers)
 
     # table = None
     # for t in soup.find_all("table"):
@@ -120,6 +158,7 @@ def html_table_to_csv(url, output_file):
 
 if __name__ == "__main__":
     # url = "https://easychair.org/cfp/area.cgi?area=18"
-    url = "https://easychair.org/cfp/area.cgi"
+    url = urljoin(conferences_by_area_baseurl, "area.cgi")
+    print(url, conferences_by_area_baseurl)
     output_file = processed_data_path / "conference_data.csv"
     html_table_to_csv(url, output_file)
