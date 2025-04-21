@@ -1,6 +1,13 @@
 <!-- toc -->
 
-# $ProjectName
+# AI in Business Analysis. Miner
+Mining conferences data for educational purposes.
+
+Uses self-made caching for fetching data (in [data/raw](./data/raw)). Delete folder if you
+want to refetch new data.
+
+All processed data is in [processed folder](./data/processed).
+
 ## [Methodology chosen][2]
 [Data Science Lifecycle Process][1].
 See [Branch Types][3] for branching naming model.
