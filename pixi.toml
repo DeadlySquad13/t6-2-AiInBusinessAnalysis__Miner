@@ -1,7 +1,7 @@
 [project]
-name = "$project-name"
+name = "t6-2-AiInBusinessAnalysis__Miner"
 version = "0.1.0"
-description = "$project-description"
+description = "Mining data for educational purposes"
 authors = ["DeadlySquad13 <46250621+DeadlySquad13@users.noreply.github.com>"]
 channels = ["pytorch", "nvidia", "conda-forge"]
 platforms = ["linux-64", "osx-64", "osx-arm64"]
@@ -23,7 +23,7 @@ tqdm = ">=4.66.2,<4.67"
 
 [feature.test]
 tasks = { test = "pytest" }
-pypi-dependencies = { pull-requests-analyzer = { path = "./", editable = true }, pytest = "==6.2.5", pytest-cov = "==2.12.1" }
+pypi-dependencies = { t6-2-AiInBusinessAnalysis__Miner = { path = "./", editable = true }, pytest = "==6.2.5", pytest-cov = "==2.12.1" }
 
 [feature.lint.tasks]
 lint-check = "flake8 src"
@@ -45,7 +45,7 @@ isort = "==5.13.2"
 
 [feature.pre-commit]
 tasks = { pre-commit-check = "pre-commit run --all-files" }
-pypi-dependencies = { pull-requests-analyzer = { path = "./", editable = true }, pre-commit = "==3.7.0" }
+pypi-dependencies = { t6-2-AiInBusinessAnalysis__Miner = { path = "./", editable = true }, pre-commit = "==3.7.0" }
 
 [feature.quarto.tasks]
 preview-docs = "quarto preview docs"
@@ -66,13 +66,6 @@ jupyter-console = "*"
 
 [feature.jupyter-neovim.pypi-dependencies]
 jupynium = "*"
-
-[feature.deep-learning.dependencies]
-pytorch = ">=2.2.2,<2.4"
-
-[feature.deep-learning.target.linux-64.dependencies]
-pytorch = ">=2.3.0,<2.4"
-pytorch-cuda = "12.1.*"
 
 [environments]
 default = []
