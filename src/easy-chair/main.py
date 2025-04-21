@@ -135,7 +135,6 @@ def get_research_area_conferences_data(
         for row in table.find_all("tr")[1:]:  # Skip header row
             cells = row.find_all(["td", "th"])
             if len(cells) >= len(headers):
-                # row_data = [cell.get_text(strip=True) for cell in cells[: len(headers)]]
                 row_data = [
                     get_column_data(*cell) for cell in enumerate(cells[: len(headers)])
                 ]
@@ -152,46 +151,45 @@ def html_table_to_csv(url: str, results_dir_path: Path):
     # Parse the HTML
     soup = BeautifulSoup(html_content, "html.parser")
 
-    # Find a table that contains all these headers
-    table_headers = None
     t = soup.find("table", id="ec:table1")
 
     if not t:
         return False
 
     research_areas = get_research_areas(t)
-    area = research_areas.__next__()
-    print(area.url)
+    for area in research_areas:
+        print(area.url)
 
-    area_html_content = fetch_html(area.url)
-    if not area_html_content:
-        return False
+        area_html_content = fetch_html(area.url)
+        if not area_html_content:
+            return False
 
-    area_soup = BeautifulSoup(area_html_content, "html.parser")
-    conferences_t = area_soup.find("table", id="ec:table2")
+        area_soup = BeautifulSoup(area_html_content, "html.parser")
+        conferences_t = area_soup.find("table", id="ec:table2")
 
-    if not conferences_t:
-        return False
+        if not conferences_t:
+            return False
 
-    # print(conferences_t.prettify())
-    # print(list(get_research_areas(t)))
+        # print(conferences_t.prettify())
+        # print(list(get_research_areas(t)))
 
-    # table_headers = [th.get_text(strip=True) for th in tds]
+        # Find a table that contains all these headers
+        # table_headers = [th.get_text(strip=True) for th in tds]
 
-    # print(table_headers)
-    # if not table:
-    #     print("Could not find a table with the specified headers")
-    #     print(soup.prettify())
-    #     return False
+        # print(table_headers)
+        # if not table:
+        #     print("Could not find a table with the specified headers")
+        #     print(soup.prettify())
+        #     return False
 
-    # print(table)
+        # print(table)
 
-    results_dir_path.mkdir(exist_ok=True)
-    print(f"Saving tables to {results_dir_path}:")
+        results_dir_path.mkdir(exist_ok=True)
+        print(f"Saving tables to {results_dir_path}:")
 
-    get_research_area_conferences_data(
-        conferences_t, area=area, results_dir_path=results_dir_path, headers=HEADERS
-    )
+        get_research_area_conferences_data(
+            conferences_t, area=area, results_dir_path=results_dir_path, headers=HEADERS
+        )
 
     return True
 
