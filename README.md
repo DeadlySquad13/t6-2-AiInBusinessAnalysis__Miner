@@ -1,10 +1,22 @@
-<!-- toc -->
+<!-- mtoc-start -->
 
+* [AI in Business Analysis. Miner](#ai-in-business-analysis-miner)
+  * [[Methodology chosen][2]](#methodology-chosen2)
+  * [Contributing](#contributing)
+  * [References](#references)
+
+<!-- mtoc-end -->
 # AI in Business Analysis. Miner
 Mining conferences data for educational purposes.
 
+Requires pixi to run, every dependency is managed by it:
+```bash
+pixi install # Or if you have direnv: direnv allow
+pixi run mine-conference-data
+```
+
 Uses self-made caching for fetching data (in [data/raw](./data/raw)). Delete folder if you
-want to refetch new data.
+want to refetch and get new data.
 
 All processed data is in [processed folder](./data/processed).
 
