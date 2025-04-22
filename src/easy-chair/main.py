@@ -131,9 +131,9 @@ def get_research_area_conferences_data(
         # Write headers.
         writer.writerow([header["name"] for header in headers])
 
-        # Process rows.
-        for row in table.find_all("tr")[1:]:  # Skip header row
-            cells = row.find_all(["td", "th"])
+        # Process rows (skip headers).
+        for row in table.find_all("tr"):
+            cells = row.find_all("td")
             if len(cells) >= len(headers):
                 row_data = [
                     get_column_data(*cell) for cell in enumerate(cells[: len(headers)])
@@ -157,6 +157,10 @@ def html_table_to_csv(url: str, results_dir_path: Path):
         return False
 
     research_areas = get_research_areas(t)
+
+    results_dir_path.mkdir(parents=True, exist_ok=True)
+    print(f"Saving tables to {results_dir_path}:")
+
     for area in research_areas:
         print(area.url)
 
@@ -171,6 +175,8 @@ def html_table_to_csv(url: str, results_dir_path: Path):
             return False
 
         # print(conferences_t.prettify())
+
+        # print(conferences_t.prettify())
         # print(list(get_research_areas(t)))
 
         # Find a table that contains all these headers
@@ -183,9 +189,6 @@ def html_table_to_csv(url: str, results_dir_path: Path):
         #     return False
 
         # print(table)
-
-        results_dir_path.mkdir(exist_ok=True)
-        print(f"Saving tables to {results_dir_path}:")
 
         get_research_area_conferences_data(
             conferences_t, area=area, results_dir_path=results_dir_path, headers=HEADERS
